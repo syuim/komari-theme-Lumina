@@ -156,15 +156,15 @@ export function insertMetricGapSentinels(
       .map((point) => point.time);
     if (validTimes.length < 2) continue;
 
-    const configuredInterval = intervals.get(key);
-    // Server-side downsampling can space points far wider than the task's
-    // configured interval; trust whichever cadence is coarser so aggregated
-    // series are not flooded with gap sentinels between every real point.
-    const detectedInterval = detectTypicalIntervalMs(validTimes, defaultInterval);
+    // intervals 传进来的必须是数据的**实际**采样间隔，而不是任务配置的 interval：
+    // 服务端降采样后聚合点的间距可能远大于配置值，按配置值判断会把每两个相邻点
+    // 之间都当成断档。调用方负责把降采样栅格算进去（见 getMetricPingRecords）；
+    // 这里只在完全没有信息时才退回按有效点自行推断。
+    const effectiveInterval = intervals.get(key);
     const interval =
-      typeof configuredInterval === "number" && configuredInterval > 0
-        ? Math.max(configuredInterval, detectedInterval)
-        : detectedInterval;
+      typeof effectiveInterval === "number" && effectiveInterval > 0
+        ? effectiveInterval
+        : detectTypicalIntervalMs(validTimes, defaultInterval);
     if (!Number.isFinite(interval) || interval <= 0) continue;
 
     const tolerance = Math.max(1, interval * toleranceRatio);

@@ -82,6 +82,7 @@ export function PingChart({
   });
   const isDark = resolvedAppearance === "dark";
   const tasks = useMemo(() => [...(data?.tasks ?? [])].sort((a, b) => a.id - b.id), [data]);
+  const sampleIntervals = data?.sampleIntervals;
   const taskLabels = useMemo(() => {
     const counts = new Map<string, number>();
     for (const task of tasks) {
@@ -179,10 +180,18 @@ export function PingChart({
       chartPoints = cutPeakValues(chartPoints, taskKeys);
     }
     chartPoints = insertMetricGapSentinels(chartPoints, {
+      // 断档判定用「配置间隔」与「服务端实测采样间隔」中较大的那个：降采样后按真实
+      // 栅格判断，原始数据下两者相等、行为不变。
       intervals: new Map(
         tasks
-          .filter((task) => typeof task.interval === "number" && task.interval > 0)
-          .map((task) => [String(task.id), task.interval] as const),
+          .map((task) => {
+            const key = String(task.id);
+            const configured =
+              typeof task.interval === "number" && task.interval > 0 ? task.interval : 0;
+            const sampled = sampleIntervals?.[key] ?? 0;
+            return [key, Math.max(configured, sampled)] as const;
+          })
+          .filter(([, interval]) => interval > 0),
       ),
       defaultInterval: fallbackInterval,
       matchToleranceRatio: 0.25,
@@ -193,7 +202,7 @@ export function PingChart({
     );
 
     return [times, ...perTask] as uPlot.AlignedData;
-  }, [cutPeak, data, taskKeySet, taskKeys, tasks, visibleTasks.length]);
+  }, [cutPeak, data, sampleIntervals, taskKeySet, taskKeys, tasks, visibleTasks.length]);
 
   useEffect(() => {
     if (chart) chartRef.current = chart;

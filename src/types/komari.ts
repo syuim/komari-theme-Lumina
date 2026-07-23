@@ -367,6 +367,9 @@ export interface PingRecordsResponse {
   tasks: PingTask[];
   from?: string | number;
   to?: string | number;
+  // 返回数据的实际采样间隔（秒），按 task id 索引。服务端降采样时会大于任务配置的
+  // interval；走旧版 records 接口拿原始数据时不带该字段。
+  sampleIntervals?: Record<string, number>;
 }
 
 export const PingBasicInfoSchema = z

@@ -17,6 +17,7 @@ import {
   type Version,
   type LoadRecordsResponse,
   type PingRecordsResponse,
+  type PingRecord,
   type PingTask,
   type PingBasicInfo,
 } from "@/types/komari";
@@ -167,6 +168,81 @@ function getRecordsMaxCount(hours: number, recordsPerHour: number) {
 
 function finiteMetricValue(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function metricTimeToSeconds(value: string | number) {
+  if (typeof value === "number") {
+    return value > 1_000_000_000_000 ? value / 1000 : value;
+  }
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Number.NaN : parsed / 1000;
+}
+
+function medianOf(values: number[]) {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}
+
+// server_downsample 让服务端把整个时间窗按 max_points 分桶，返回的聚合点间距可能
+// 远大于任务配置的 interval。图表判断掉线断档必须按这个真实栅格来，所以在这里就地
+// 测出来交给上层，而不是让图表拿配置值去猜。
+//
+// 逐 task 统计：不同任务的 interval 可以不同，混在一起取中位数会让间隔较大的任务
+// 被按较密的栅格判断，重新触发哨兵泛滥。统计发生在 pingRecordsFromMetricSeries
+// 丢弃空值点之前，覆盖 latency 与 loss 两条序列的全部时间戳。
+function pingSampleIntervalsFromMetricSeries(series: PublicMetricSeries[]) {
+  const timesByTask = new Map<string, Set<number>>();
+
+  for (const item of series) {
+    if (item.metric_key !== PING_LATENCY_METRIC && item.metric_key !== PING_LOSS_METRIC) {
+      continue;
+    }
+    for (const point of item.points ?? []) {
+      const taskId = getTaskIdFromTags(getPointTags(item, point));
+      if (taskId == null) continue;
+      const time = metricTimeToSeconds(point.time);
+      if (!Number.isFinite(time) || time <= 0) continue;
+      const key = String(taskId);
+      const times = timesByTask.get(key) ?? new Set<number>();
+      times.add(time);
+      timesByTask.set(key, times);
+    }
+  }
+
+  return sampleIntervalsFromTimes(timesByTask);
+}
+
+// 旧版 records 接口拿的是原始数据，理论上间距就等于任务配置的 interval；但配置与实际
+// 上报节奏对不上的情况确实存在，同样实测一遍，让所有传输路径给上层的契约保持一致。
+function pingSampleIntervalsFromRecords(records: PingRecord[]) {
+  const timesByTask = new Map<string, Set<number>>();
+  for (const record of records) {
+    const time = metricTimeToSeconds(record.time);
+    if (!Number.isFinite(time) || time <= 0) continue;
+    const key = String(record.task_id);
+    const times = timesByTask.get(key) ?? new Set<number>();
+    times.add(time);
+    timesByTask.set(key, times);
+  }
+  return sampleIntervalsFromTimes(timesByTask);
+}
+
+function sampleIntervalsFromTimes(timesByTask: Map<string, Set<number>>) {
+  const intervals: Record<string, number> = {};
+  for (const [taskId, times] of timesByTask) {
+    if (times.size < 2) continue;
+    const sorted = [...times].sort((left, right) => left - right);
+    const gaps: number[] = [];
+    for (let index = 1; index < sorted.length; index += 1) {
+      const gap = sorted[index] - sorted[index - 1];
+      if (gap > 0) gaps.push(gap);
+    }
+    const pitch = medianOf(gaps);
+    if (pitch > 0) intervals[taskId] = pitch;
+  }
+  return intervals;
 }
 
 function getTaskIdFromTags(...items: Array<Record<string, string> | undefined>) {
@@ -376,6 +452,7 @@ function normalizeRpcPingRecords(
     tasks,
     from: payload.from,
     to: payload.to,
+    sampleIntervals: pingSampleIntervalsFromRecords(records),
   };
 }
 
@@ -415,6 +492,7 @@ async function getMetricPingRecords(
     tasks: filterPingTasks(tasks, records, uuid),
     from: metrics.start,
     to: metrics.end,
+    sampleIntervals: pingSampleIntervalsFromMetricSeries(metrics.series ?? []),
   };
 }
 
@@ -531,7 +609,7 @@ export async function getPingRecords(
     );
     return normalizeRpcPingRecords(payload);
   } catch {
-    return (await apiGet(
+    const payload = (await apiGet(
       `/api/records/ping?uuid=${encodeURIComponent(uuid)}&hours=${hours}`,
       z.object({
         count: z.number().default(0),
@@ -539,6 +617,7 @@ export async function getPingRecords(
         tasks: z.array(PingTaskSchema).default([]),
       }),
     )) as PingRecordsResponse;
+    return { ...payload, sampleIntervals: pingSampleIntervalsFromRecords(payload.records) };
   }
 }
 
