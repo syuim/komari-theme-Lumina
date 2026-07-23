@@ -389,7 +389,6 @@ export interface PingOverviewItem {
   client: string;
   isAssigned: boolean;
   lastValue: number | null;
-  values: number[];
   samples: Array<{ time: number; value: number }>;
   max: number;
   loss: number | null;

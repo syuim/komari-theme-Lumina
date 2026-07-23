@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useNode, useNodeTrafficTrend } from "@/hooks/useNode";
 import { usePingMini, usePingMiniBuckets } from "@/hooks/usePingMini";
-import { usePreferences } from "@/hooks/usePreferences";
+import { useResolvedAppearance } from "@/hooks/usePreferences";
 import {
   formatBytes,
   formatExpireDays,
@@ -83,7 +83,7 @@ export const NodeCard = memo(function NodeCard({
 }: {
   uuid: string;
 }) {
-  const { resolvedAppearance } = usePreferences();
+  const resolvedAppearance = useResolvedAppearance();
   const node = useNode(uuid);
   const trafficTrend = useNodeTrafficTrend(uuid);
   const ping = usePingMini(uuid);
@@ -298,8 +298,6 @@ export const NodeCard = memo(function NodeCard({
               <div className="server-health-chart-wrap">
                 {hasHomepagePingBinding ? (
                   <MiniBars
-                    values={ping.values}
-                    lastValue={ping.lastValue ?? undefined}
                     buckets={pingBuckets}
                     redrawKey={resolvedAppearance}
                     onHoverIndex={setHoveredLatencyIndex}
@@ -481,9 +479,8 @@ function TrafficDotStrip({
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       if (samples.length === 0) return;
       const slotWidth = width / samples.length;
-      const styles = getComputedStyle(document.documentElement);
-      const baseColor = resolveCssColor(color, styles);
-      const inactiveColor = resolveCssColor("var(--progress-bg)", styles);
+      const baseColor = resolveCssColor(color);
+      const inactiveColor = resolveCssColor("var(--progress-bg)");
 
       samples.forEach((sample, index) => {
         const hasTraffic = sample.value > 0;

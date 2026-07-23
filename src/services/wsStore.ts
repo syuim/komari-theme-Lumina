@@ -98,12 +98,53 @@ function emptyDisplay(info: NodeInfo, online: boolean | null): NodeDisplay {
   };
 }
 
+/**
+ * 静态信息 30 秒同步一次，绝大多数轮次内容完全没变。
+ * 逐字段比较后复用原对象，避免每半分钟把所有卡片重渲染一遍。
+ * 只比较渲染会用到的已声明字段（schema 是 passthrough，多余字段不参与展示）。
+ */
+function sameNodeInfo(display: NodeDisplay, info: NodeInfo) {
+  return (
+    display.uuid === info.uuid &&
+    display.name === info.name &&
+    display.group === info.group &&
+    display.region === info.region &&
+    display.hidden === info.hidden &&
+    display.cpu_name === info.cpu_name &&
+    display.cpu_cores === info.cpu_cores &&
+    display.arch === info.arch &&
+    display.virtualization === info.virtualization &&
+    display.os === info.os &&
+    display.kernel_version === info.kernel_version &&
+    display.gpu_name === info.gpu_name &&
+    display.mem_total === info.mem_total &&
+    display.swap_total === info.swap_total &&
+    display.disk_total === info.disk_total &&
+    display.weight === info.weight &&
+    display.price === info.price &&
+    display.billing_cycle === info.billing_cycle &&
+    display.auto_renewal === info.auto_renewal &&
+    display.currency === info.currency &&
+    display.expired_at === info.expired_at &&
+    display.tags === info.tags &&
+    display.public_remark === info.public_remark &&
+    display.traffic_limit === info.traffic_limit &&
+    display.traffic_limit_type === info.traffic_limit_type &&
+    display.created_at === info.created_at &&
+    display.updated_at === info.updated_at
+  );
+}
+
 function mergeNodeInfo(
   display: NodeDisplay | undefined,
   info: NodeInfo,
 ): NodeDisplay {
   if (!display) {
     return emptyDisplay(info, null);
+  }
+
+  if (sameNodeInfo(display, info)) {
+    return display;
   }
 
   return {
@@ -273,10 +314,17 @@ function updateTrafficTrendSeries(
   };
 }
 
+export interface StoreStatus {
+  hasLoaded: boolean;
+  failureStreak: number;
+}
+
 let state: State = emptyState();
 const globalListeners = new Set<Listener>();
 const nodeListeners = new Map<string, Set<Listener>>();
 let visibleNodeUuidsSnapshot: string[] = [];
+let visibleNodeUuidsSource: State | null = null;
+let storeStatusSnapshot: StoreStatus = { hasLoaded: false, failureStreak: 0 };
 let scrollIdleTimer: number | null = null;
 let scrollTrackingStarted = false;
 let scrollActive = false;
@@ -507,17 +555,36 @@ async function syncNodeInfo(force = false) {
   try {
     const nodes = sortNodes(await getNodes());
     const order = nodes.map((node) => node.uuid);
-    const touched = new Set<string>([...state.order, ...order]);
+    const nextUuids = new Set(order);
+    const touched = new Set<string>();
+    for (const uuid of state.order) {
+      if (!nextUuids.has(uuid)) touched.add(uuid);
+    }
     const byUuid = Object.fromEntries(
-      nodes.map((info) => [info.uuid, mergeNodeInfo(state.byUuid[info.uuid], info)]),
+      nodes.map((info) => {
+        const merged = mergeNodeInfo(state.byUuid[info.uuid], info);
+        if (merged !== state.byUuid[info.uuid]) touched.add(info.uuid);
+        return [info.uuid, merged];
+      }),
     );
-    const trafficTrends = Object.fromEntries(
-      order.map((uuid) => [uuid, state.trafficTrends[uuid] ?? EMPTY_TRAFFIC_TREND]),
-    );
+    const orderChanged =
+      order.length !== state.order.length ||
+      order.some((uuid, index) => uuid !== state.order[index]);
 
     hydrated = true;
     hydratePromise = Promise.resolve();
     lastNodeInfoSyncAt = Date.now();
+
+    // 静态信息通常一成不变，无变化时直接跳过 commit，
+    // 免得每 30 秒白白唤醒一次全部订阅者。
+    if (!orderChanged && touched.size === 0) {
+      return;
+    }
+
+    const trafficTrends = Object.fromEntries(
+      order.map((uuid) => [uuid, state.trafficTrends[uuid] ?? EMPTY_TRAFFIC_TREND]),
+    );
+
     commit(
       {
         ...state,
@@ -591,6 +658,10 @@ async function bootstrap() {
   }
 }
 
+function isDocumentHidden() {
+  return typeof document !== "undefined" && document.hidden;
+}
+
 let started = false;
 export function ensureStarted() {
   if (started) return;
@@ -599,8 +670,15 @@ export function ensureStarted() {
   ensureScrollTrackingStarted();
   void bootstrap();
   window.setInterval(() => {
+    // 后台标签页没人看，2 秒一次的轮询纯属浪费客户端与服务端资源。
+    if (isDocumentHidden()) return;
     void bootstrap();
   }, LIVE_STATUS_REFRESH_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    // 回到前台立刻补一次，避免先看到过期数据再等下一个 tick。
+    if (!document.hidden) void bootstrap();
+  });
 }
 
 export function subscribe(listener: Listener): () => void {
@@ -643,6 +721,13 @@ export function getNodeTrafficTrendSnapshot(uuid: string): {
 }
 
 export function getVisibleNodeUuidsSnapshot(): string[] {
+  // useSyncExternalStore 每次 render 都会调 getSnapshot，state 没换就直接返回缓存，
+  // 省掉一次数组过滤与分配。
+  if (visibleNodeUuidsSource === state) {
+    return visibleNodeUuidsSnapshot;
+  }
+  visibleNodeUuidsSource = state;
+
   const next = state.order.filter((uuid) => {
     const node = state.byUuid[uuid];
     return Boolean(node) && !node.hidden;
@@ -657,4 +742,19 @@ export function getVisibleNodeUuidsSnapshot(): string[] {
 
   visibleNodeUuidsSnapshot = next;
   return visibleNodeUuidsSnapshot;
+}
+
+/**
+ * 只暴露"是否已完成首次加载 + 连续失败次数"，
+ * 不透传每 2 秒都会变的 lastSuccessAt，订阅方才能真正被 bailout。
+ */
+export function getStoreStatusSnapshot(): StoreStatus {
+  const hasLoaded = state.lastSuccessAt > 0;
+  if (
+    storeStatusSnapshot.hasLoaded !== hasLoaded ||
+    storeStatusSnapshot.failureStreak !== state.failureStreak
+  ) {
+    storeStatusSnapshot = { hasLoaded, failureStreak: state.failureStreak };
+  }
+  return storeStatusSnapshot;
 }

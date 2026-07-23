@@ -22,7 +22,7 @@ import {
   interpolateMetricGaps,
 } from "./chartData";
 import { formatBytes, formatTrafficRateLabel } from "@/utils/format";
-import { usePreferences } from "@/hooks/usePreferences";
+import { useResolvedAppearance } from "@/hooks/usePreferences";
 import type { LoadRecord } from "@/types/komari";
 
 const CHART_COLORS = {
@@ -503,7 +503,7 @@ export function LoadChart({
   const ramTotalHint = node?.mem_total || node?.ramTotal || 0;
   const swapTotalHint = node?.swap_total || node?.swapTotal || 0;
   const diskTotalHint = node?.disk_total || node?.diskTotal || 0;
-  const { resolvedAppearance } = usePreferences();
+  const resolvedAppearance = useResolvedAppearance();
   const [realtimePoints, setRealtimePoints] = useState<ChartPoint[]>([]);
   const [connectNulls, setConnectNulls] = useState(false);
   const syncKey = `lumina-load-${uuid}`;

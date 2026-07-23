@@ -46,8 +46,7 @@ export function MetricBar({
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      const styles = getComputedStyle(document.documentElement);
-      const inactiveColor = resolveCssColor("var(--progress-bg)", styles);
+      const inactiveColor = resolveCssColor("var(--progress-bg)");
       const gap = 2;
       const segmentWidth = Math.max(
         1,
@@ -57,11 +56,11 @@ export function MetricBar({
         paintKind === "gradient"
           ? (() => {
               const gradient = ctx.createLinearGradient(0, 0, width, 0);
-              gradient.addColorStop(0, resolveCssColor(paintFrom, styles));
-              gradient.addColorStop(1, resolveCssColor(paintTo, styles));
+              gradient.addColorStop(0, resolveCssColor(paintFrom));
+              gradient.addColorStop(1, resolveCssColor(paintTo));
               return gradient;
             })()
-          : resolveCssColor(paintColor, styles);
+          : resolveCssColor(paintColor);
 
       for (let index = 0; index < METRIC_SEGMENT_COUNT; index += 1) {
         const x = index * (segmentWidth + gap);

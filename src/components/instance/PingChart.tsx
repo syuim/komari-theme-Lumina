@@ -22,7 +22,7 @@ import {
   insertMetricGapSentinels,
 } from "./chartData";
 import { latencyHeatColor, lossHeatColor } from "@/utils/metricTone";
-import { usePreferences } from "@/hooks/usePreferences";
+import { useResolvedAppearance } from "@/hooks/usePreferences";
 import { isLostPingSample, isValidPingLatency } from "@/utils/pingValues";
 import type { PingRecord } from "@/types/komari";
 import type { TimedMetricPoint } from "./chartData";
@@ -67,7 +67,7 @@ export function PingChart({
   active?: boolean;
 }) {
   const { data, isLoading, refetch } = usePingRecords(uuid, hours, active);
-  const { resolvedAppearance } = usePreferences();
+  const resolvedAppearance = useResolvedAppearance();
   const { ref: wrapRef, w, h } = useChartSize<HTMLDivElement>("wide");
   const [hiddenTasks, setHiddenTasks] = useState<Set<number>>(new Set());
   const [connectNulls, setConnectNulls] = useState(false);

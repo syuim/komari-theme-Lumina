@@ -24,7 +24,7 @@ function buildSubtitle(parts: Array<string | null | undefined>) {
 
 export function InstanceDetails({ uuid }: { uuid: string }) {
   const node = useNode(uuid);
-  const { lastSuccessAt } = useNodeStoreStatus();
+  const { hasLoaded } = useNodeStoreStatus();
   const [lookupTimedOut, setLookupTimedOut] = useState(false);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function InstanceDetails({ uuid }: { uuid: string }) {
   const tags = useMemo(() => parseTags(node?.tags), [node?.tags]);
 
   if (!node) {
-    if (lastSuccessAt > 0 || lookupTimedOut) {
+    if (hasLoaded || lookupTimedOut) {
       return (
         <section className="instance-panel">
           <div className="instance-empty instance-empty-stack">

@@ -1,119 +1,28 @@
 import { useCallback, useMemo } from "react";
 import { CanvasStrip, fillRoundedRect, resolveCssColor } from "./CanvasStrip";
 import { latencyHeatColor } from "@/utils/metricTone";
-import { isValidPingLatency } from "@/utils/pingValues";
 import type { PingOverviewBucket } from "@/types/komari";
 
 const ACTIVE_BAR_HEIGHT = 0.84;
 
 interface MiniBarsProps {
-  /** Raw latency values (ms) ordered oldest→newest. Negative values are treated as lost and dimmed. */
-  values: number[];
-  /** Color tier threshold based on this value (fallback path only). */
-  lastValue?: number;
-  /** How many bars to render (pads older buckets with empty). */
-  count?: number;
-  buckets?: PingOverviewBucket[];
+  /** Aggregated latency buckets ordered oldest→newest. */
+  buckets: PingOverviewBucket[];
   redrawKey?: string;
   onHoverIndex?: (index: number | null) => void;
 }
 
 /** Pixel-matched latency strip, visually aligned with the packet-loss strip. */
-export function MiniBars({
-  values,
-  lastValue,
-  count = 24,
-  buckets,
-  redrawKey,
-  onHoverIndex,
-}: MiniBarsProps) {
-  const bars = useMemo<
-    Array<{
-      value: number;
-      bucket: PingOverviewBucket | null;
-      hasSamples: boolean;
-      hasValue: boolean;
-      tone: string;
-    }>
-  >(() => {
-    if (buckets && buckets.length > 0) {
-      return buckets.map((bucket) => {
-        const value = bucket.value ?? 0;
-        return {
-          value,
-          bucket,
-          hasSamples: bucket.total > 0,
-          hasValue: bucket.value != null,
-          tone: latencyHeatColor(bucket.value),
-        };
-      });
-    }
-
-    const fallbackTone = latencyHeatColor(lastValue);
-    const nextBars: Array<{
-      value: number;
-      bucket: PingOverviewBucket | null;
-      hasSamples: boolean;
-      hasValue: boolean;
-      tone: string;
-    }> = [];
-
-    if (values.length === 0) {
-      for (let i = 0; i < count; i++) {
-        nextBars.push({
-          value: 0,
-          bucket: null,
-          hasSamples: false,
-          hasValue: false,
-          tone: fallbackTone,
-        });
-      }
-      return nextBars;
-    }
-
-    if (values.length <= count) {
-      const padding = count - values.length;
-      for (let i = 0; i < padding; i++) {
-        nextBars.push({
-          value: 0,
-          bucket: null,
-          hasSamples: false,
-          hasValue: false,
-          tone: fallbackTone,
-        });
-      }
-      values.forEach((value) => {
-        const hasValue = isValidPingLatency(value);
-        nextBars.push({
-          value,
-          bucket: null,
-          hasSamples: true,
-          hasValue,
-          tone: latencyHeatColor(hasValue ? value : lastValue),
-        });
-      });
-      return nextBars;
-    }
-
-    const bucketSize = values.length / count;
-    for (let i = 0; i < count; i++) {
-      const start = Math.floor(i * bucketSize);
-      const end = Math.floor((i + 1) * bucketSize);
-      const slice = values.slice(start, end);
-      const valid = slice.filter(isValidPingLatency);
-      const avg = valid.length
-        ? valid.reduce((a, b) => a + b, 0) / valid.length
-        : 0;
-      nextBars.push({
-        value: avg,
-        bucket: null,
-        hasSamples: slice.length > 0,
-        hasValue: valid.length > 0,
-        tone: latencyHeatColor(valid.length > 0 ? avg : lastValue),
-      });
-    }
-    return nextBars;
-  }, [buckets, count, lastValue, values]);
+export function MiniBars({ buckets, redrawKey, onHoverIndex }: MiniBarsProps) {
+  const bars = useMemo(
+    () =>
+      buckets.map((bucket) => ({
+        bucket,
+        hasValue: bucket.value != null,
+        tone: latencyHeatColor(bucket.value),
+      })),
+    [buckets],
+  );
 
   // draw / getHoverIndex 用 useCallback 固定身份：hover 引起的 render 不应重绘画布。
   const getHoverIndex = useCallback(
@@ -121,19 +30,16 @@ export function MiniBars({
       if (bars.length === 0 || width <= 0) return null;
       const slotWidth = width / bars.length;
       const index = Math.max(0, Math.min(bars.length - 1, Math.floor(offsetX / slotWidth)));
-      const bar = bars[index];
-      return bar?.bucket?.index ?? (bar?.hasSamples ? index : null);
+      return bars[index]?.bucket.index ?? null;
     },
     [bars],
   );
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      const styles = getComputedStyle(document.documentElement);
-      const inactiveColor = resolveCssColor("var(--progress-bg)", styles);
+      const inactiveColor = resolveCssColor("var(--progress-bg)");
       const gap = bars.length > 48 ? 1 : 2;
       const barWidth = Math.max(1, (width - gap * (bars.length - 1)) / Math.max(1, bars.length));
-
       const barHeight = height * ACTIVE_BAR_HEIGHT;
       const y = height - barHeight;
 

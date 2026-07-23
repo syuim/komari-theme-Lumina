@@ -19,6 +19,7 @@ const DEFAULTS: PrefsState = {
 
 let themeFlipTimer: number | null = null;
 let hasExplicitAppearancePreference = false;
+let appliedDefaultAppearance: Appearance | null = null;
 let systemAppearanceMediaQuery: MediaQueryList | null = null;
 
 function isAppearance(value: unknown): value is Appearance {
@@ -108,15 +109,26 @@ function applyResolvedAppearance(resolvedAppearance: ResolvedAppearance) {
   }
 }
 
+let hasAppliedAppearance = false;
+
 function commit(next: Partial<PrefsState>) {
   const merged: PrefsState = { ...snapshot, ...next };
   if (next.appearance) {
     merged.resolvedAppearance = resolveAppearance(merged.appearance);
   }
+  // 外观没有实际变化时直接返回：多个订阅者重复提交同一个值不该触发全量重渲染。
+  if (
+    hasAppliedAppearance &&
+    snapshot.appearance === merged.appearance &&
+    snapshot.resolvedAppearance === merged.resolvedAppearance
+  ) {
+    return;
+  }
   if (snapshot.resolvedAppearance !== merged.resolvedAppearance) {
     markThemeFlip();
   }
   snapshot = merged;
+  hasAppliedAppearance = true;
   applyResolvedAppearance(merged.resolvedAppearance);
   emit();
 }
@@ -159,6 +171,15 @@ function getSnapshot() {
   return snapshot;
 }
 
+/**
+ * 只读外观的订阅入口。首页每张卡片都要用外观做重绘 key，
+ * 走这里就不会顺带订阅 react-query 并重复跑默认外观同步。
+ */
+export function useResolvedAppearance(): ResolvedAppearance {
+  initIfNeeded();
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot).resolvedAppearance;
+}
+
 export function usePreferences() {
   initIfNeeded();
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -170,6 +191,8 @@ export function usePreferences() {
     if (!config) return;
     if (hasExplicitAppearancePreference) return;
     const defaultAppearance = normalizeAppearance(config.theme_settings?.defaultAppearance);
+    if (appliedDefaultAppearance === defaultAppearance) return;
+    appliedDefaultAppearance = defaultAppearance;
     persistDefaultAppearance(defaultAppearance);
     commit({ appearance: defaultAppearance });
   }, [config]);

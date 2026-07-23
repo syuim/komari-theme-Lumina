@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import {
   ensureStarted,
   getNodeSnapshot,
   getNodeTrafficTrendSnapshot,
+  getStoreStatusSnapshot,
   getVisibleNodeUuidsSnapshot,
   subscribe,
   subscribeToNode,
-  getSnapshot,
 } from "@/services/wsStore";
 import type { NodeDisplay, TrafficTrendSample } from "@/types/komari";
 
@@ -65,12 +65,11 @@ export function useVisibleNodeUuids(): string[] {
 
 export function useNodeStoreStatus() {
   useEnsured();
-  const snap = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return useMemo(
-    () => ({
-      lastSuccessAt: snap.lastSuccessAt,
-      failureStreak: snap.failureStreak,
-    }),
-    [snap.failureStreak, snap.lastSuccessAt],
+  // 订阅派生快照而非整个 state：state 每 2 秒换一次身份，
+  // 直接订阅会让顶栏之类的消费者跟着空转重渲染。
+  return useSyncExternalStore(
+    subscribe,
+    getStoreStatusSnapshot,
+    getStoreStatusSnapshot,
   );
 }

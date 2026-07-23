@@ -22,7 +22,6 @@ const EMPTY_PING: PingOverviewItem = {
   client: "",
   isAssigned: false,
   lastValue: null,
-  values: [],
   samples: [],
   max: 1,
   loss: null,
@@ -75,15 +74,6 @@ function stringifyBindings(bindings: HomepagePingTaskBindings) {
   );
 }
 
-function equalNumberArray(a: number[], b: number[]) {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
 function equalSamples(
   a: Array<{ time: number; value: number }>,
   b: Array<{ time: number; value: number }>,
@@ -105,7 +95,6 @@ function equalPingItem(a: PingOverviewItem | undefined, b: PingOverviewItem | un
     a.lastValue === b.lastValue &&
     a.max === b.max &&
     a.loss === b.loss &&
-    equalNumberArray(a.values, b.values) &&
     equalSamples(a.samples, b.samples)
   );
 }
@@ -137,7 +126,6 @@ function buildPingOverviewItems(
     const sorted = [...clientRecords].sort(
       (left, right) => toTimestamp(left.time) - toTimestamp(right.time),
     );
-    const values: number[] = new Array(sorted.length);
     const samples: Array<{ time: number; value: number }> = [];
     let max = 1;
 
@@ -145,7 +133,6 @@ function buildPingOverviewItems(
       const record = sorted[i];
       const value = record.value;
       const time = toTimestamp(record.time);
-      values[i] = value;
       if (time > 0) {
         samples.push({ time, value });
       }
@@ -155,14 +142,17 @@ function buildPingOverviewItems(
     }
 
     const lossStats = lossStatsByClient.get(client);
-    const latestValidRecord = [...sorted].reverse().find((record) =>
-      isValidPingLatency(record.value),
-    );
+    let lastValue: number | null = null;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      if (isValidPingLatency(sorted[i].value)) {
+        lastValue = sorted[i].value;
+        break;
+      }
+    }
     result.set(client, {
       client,
       isAssigned: true,
-      lastValue: latestValidRecord?.value ?? null,
-      values,
+      lastValue,
       samples,
       max,
       loss: lossStats?.total ? (lossStats.lost / lossStats.total) * 100 : null,
@@ -259,7 +249,6 @@ async function buildOverviewMap(
       client: uuid,
       isAssigned: true,
       lastValue: null,
-      values: [],
       samples: [],
       max: 1,
       loss: null,
@@ -293,16 +282,45 @@ let scheduledBindings: HomepagePingTaskBindings = {};
 let scheduledBindingsKey = stringifyBindings({});
 let pingRefreshInFlight = false;
 let pingRefreshTimer: number | null = null;
+let pingVisibilityTrackingStarted = false;
 const pingListeners = new Map<string, Set<Listener>>();
+
+function isDocumentHidden() {
+  return typeof document !== "undefined" && document.hidden;
+}
 
 function schedulePingRefresh(intervalMs: number) {
   if (pingRefreshTimer != null) {
     window.clearTimeout(pingRefreshTimer);
+    pingRefreshTimer = null;
   }
+  // 后台标签页不排下一轮，回到前台由 visibilitychange 立即补一次。
+  if (isDocumentHidden()) return;
   pingRefreshTimer = window.setTimeout(() => {
     pingRefreshTimer = null;
     void refreshPingOverview();
   }, intervalMs);
+}
+
+function ensurePingVisibilityTrackingStarted() {
+  if (pingVisibilityTrackingStarted || typeof document === "undefined") return;
+  pingVisibilityTrackingStarted = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (pingRefreshTimer != null) {
+        window.clearTimeout(pingRefreshTimer);
+        pingRefreshTimer = null;
+      }
+      return;
+    }
+    if (
+      scheduledVisibleUuids.length > 0 &&
+      pingRefreshTimer == null &&
+      !pingRefreshInFlight
+    ) {
+      void refreshPingOverview();
+    }
+  });
 }
 
 function commitPingOverview(
@@ -434,6 +452,7 @@ function ensurePingOverviewStarted(
   visibleUuids: string[],
   bindings: HomepagePingTaskBindings,
 ) {
+  ensurePingVisibilityTrackingStarted();
   const normalizedVisibleUuids = normalizeVisibleUuids(visibleUuids);
   const visibleKey = normalizedVisibleUuids.join("|");
   const bindingsKey = stringifyBindings(bindings);

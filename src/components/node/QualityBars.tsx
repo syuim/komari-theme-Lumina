@@ -61,8 +61,7 @@ export function QualityBars({
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      const styles = getComputedStyle(document.documentElement);
-      const inactiveColor = resolveCssColor("var(--progress-bg)", styles);
+      const inactiveColor = resolveCssColor("var(--progress-bg)");
       const gap = bars.length > 48 ? 1 : 2;
       const barWidth = Math.max(1, (width - gap * (bars.length - 1)) / Math.max(1, bars.length));
       const barHeight = height * ACTIVE_BAR_HEIGHT;
@@ -83,8 +82,8 @@ export function QualityBars({
   return (
     <CanvasStrip
       className="mini-bar-row"
-      aria-hidden
       height={16}
+      ariaHidden
       redrawKey={redrawKey}
       getHoverIndex={getHoverIndex}
       onHoverIndex={onHoverIndex}
