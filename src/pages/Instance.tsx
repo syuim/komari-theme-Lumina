@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { InstanceDetails } from "@/components/instance/InstanceDetails";
@@ -6,11 +6,15 @@ import { PingChart } from "@/components/instance/PingChart";
 import { LoadChart } from "@/components/instance/LoadChart";
 import {
   buildLoadTimeRangeOptions,
+  buildPingTimeRangeOptions,
 } from "@/components/instance/chartShared";
+import { useNode } from "@/hooks/useNode";
 import { usePublicConfig } from "@/hooks/usePublicConfig";
 import type { PublicConfig } from "@/types/komari";
 
-const FIXED_PING_HOURS = 24;
+const DEFAULT_PING_HOURS = 24;
+const BASE_DOCUMENT_TITLE =
+  typeof document !== "undefined" ? document.title : "Komari Monitor";
 
 function getMetricRetentionHours(config: PublicConfig | undefined) {
   const legacyHours = config?.record_preserve_time ?? 0;
@@ -19,38 +23,61 @@ function getMetricRetentionHours(config: PublicConfig | undefined) {
   return metricRetentionDays > 0 ? metricRetentionDays * 24 : 0;
 }
 
+function getPingRetentionHours(config: PublicConfig | undefined) {
+  const pingHours = config?.ping_record_preserve_time ?? 0;
+  if (pingHours > 0) return pingHours;
+  return getMetricRetentionHours(config);
+}
+
 export function Instance() {
   const { uuid } = useParams<{ uuid: string }>();
   const { data: config } = usePublicConfig();
+  const node = useNode(uuid ?? "");
   const [chartType, setChartType] = useState<"load" | "ping">("load");
   const [loadHours, setLoadHours] = useState(0);
-  const chartControlsRef = useRef<HTMLDivElement | null>(null);
+  const [pingHours, setPingHours] = useState(DEFAULT_PING_HOURS);
 
   const loadRanges = useMemo(
     () => buildLoadTimeRangeOptions(getMetricRetentionHours(config)),
     [config],
   );
+  const pingRanges = useMemo(
+    () => buildPingTimeRangeOptions(getPingRetentionHours(config)),
+    [config],
+  );
   const showPingChart = config?.theme_settings?.showPingChart !== false;
-
-  const alignCharts = () => {
-    const frame = window.requestAnimationFrame(() => {
-      chartControlsRef.current?.scrollIntoView({
-        behavior: "auto",
-        block: "start",
-      });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  };
+  const activeRanges = chartType === "load" ? loadRanges : pingRanges;
+  const activeHours = chartType === "load" ? loadHours : pingHours;
+  const nodeName = node?.name ?? "";
+  const siteTitle = config?.sitename || BASE_DOCUMENT_TITLE;
 
   useEffect(() => {
-    return alignCharts();
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [uuid]);
+
+  useEffect(() => {
+    if (!nodeName) return;
+    document.title = `${nodeName} · ${siteTitle}`;
+    return () => {
+      document.title = siteTitle;
+    };
+  }, [nodeName, siteTitle]);
 
   useEffect(() => {
     if (!loadRanges.some((range) => range.value === loadHours)) {
       setLoadHours(loadRanges[0]?.value ?? 0);
     }
   }, [loadHours, loadRanges]);
+
+  useEffect(() => {
+    if (pingRanges.length === 0) return;
+    if (!pingRanges.some((range) => range.value === pingHours)) {
+      const fallback =
+        pingRanges.find((range) => range.value === DEFAULT_PING_HOURS) ??
+        pingRanges[pingRanges.length - 1];
+      setPingHours(fallback.value);
+    }
+  }, [pingHours, pingRanges]);
 
   useEffect(() => {
     if (!showPingChart && chartType === "ping") {
@@ -62,15 +89,12 @@ export function Instance() {
 
   return (
     <div className="flex flex-col gap-5 py-2">
-      <Link
-        to="/"
-        className="instance-page-back"
-      >
+      <Link to="/" className="instance-page-back">
         <ChevronLeft size={14} />
         返回
       </Link>
-      <InstanceDetails uuid={uuid} onNodeReady={alignCharts} />
-      <div ref={chartControlsRef} className="instance-chart-controls">
+      <InstanceDetails uuid={uuid} />
+      <div className="instance-chart-controls">
         <div className="instance-segmented">
           <button
             type="button"
@@ -93,19 +117,20 @@ export function Instance() {
             </button>
           )}
         </div>
-        {chartType === "load" && (
+        {activeRanges.length > 1 && (
           <div
             key={`${chartType}-ranges`}
             className="instance-segmented is-scrollable"
           >
-            {loadRanges.map((range) => (
+            {activeRanges.map((range) => (
               <button
                 key={range.value}
                 type="button"
-                data-active={loadHours === range.value ? "true" : "false"}
+                data-active={activeHours === range.value ? "true" : "false"}
                 onClick={() => {
                   startTransition(() => {
-                    setLoadHours(range.value);
+                    if (chartType === "load") setLoadHours(range.value);
+                    else setPingHours(range.value);
                   });
                 }}
               >
@@ -131,7 +156,7 @@ export function Instance() {
           {showPingChart ? (
             <PingChart
               uuid={uuid}
-              hours={FIXED_PING_HOURS}
+              hours={pingHours}
               active={chartType === "ping"}
             />
           ) : null}

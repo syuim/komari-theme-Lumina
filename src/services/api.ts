@@ -68,7 +68,11 @@ const PublicQueryMetricsSchema = z
   })
   .passthrough();
 
-const LOAD_RECORDS_PER_HOUR = 12;
+// agent 默认每分钟上报一条；服务端会按 maxCount 在整个时间窗内均匀抽样，
+// 所以按图表实际渲染上限索取即可：短区间拿到分钟级细节，长区间也不会拉回几 MB。
+const LOAD_RECORDS_PER_HOUR = 60;
+const LOAD_MIN_POINTS = 120;
+const LOAD_MAX_POINTS = 720;
 const PING_RECORDS_PER_HOUR = 240;
 const MAX_RPC_RECORDS = 20_000;
 const OVERVIEW_PING_MAX_COUNT = 4_000;
@@ -142,6 +146,14 @@ function normalizeNodeListPayload(payload: unknown): NodeInfo[] {
         ? { uuid, ...value }
         : value,
     ),
+  );
+}
+
+function getLoadRecordsMaxCount(hours: number) {
+  const safeHours = Number.isFinite(hours) && hours > 0 ? hours : 1;
+  return Math.min(
+    LOAD_MAX_POINTS,
+    Math.max(LOAD_MIN_POINTS, Math.ceil(safeHours * LOAD_RECORDS_PER_HOUR)),
   );
 }
 
@@ -472,7 +484,7 @@ export async function getLoadRecords(
   hours = 6,
 ): Promise<LoadRecordsResponse> {
   try {
-    const maxCount = getRecordsMaxCount(hours, LOAD_RECORDS_PER_HOUR);
+    const maxCount = getLoadRecordsMaxCount(hours);
     const payload = await rpcCall(
       "common:getRecords",
       {

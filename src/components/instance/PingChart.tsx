@@ -6,11 +6,15 @@ import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { usePingRecords } from "@/hooks/useRecords";
 import { InstancePanel } from "./InstancePanel";
 import {
-  formatHourMinuteAxis,
-  formatTooltipTime,
+  createAxisSizer,
+  createTimeAxisValues,
+  decimalsForIncrement,
+  formatChartCoverageRange,
+  formatCursorTime,
+  formatRangeSummary,
   getChartTooltipPosition,
   toChartSeconds,
-  useResponsiveChartSize,
+  useChartSize,
 } from "./chartShared";
 import {
   cutPeakValues,
@@ -64,7 +68,7 @@ export function PingChart({
 }) {
   const { data, isLoading, refetch } = usePingRecords(uuid, hours, active);
   const { resolvedAppearance } = usePreferences();
-  const { w, h } = useResponsiveChartSize("wide");
+  const { ref: wrapRef, w, h } = useChartSize<HTMLDivElement>("wide");
   const [hiddenTasks, setHiddenTasks] = useState<Set<number>>(new Set());
   const [connectNulls, setConnectNulls] = useState(false);
   const [cutPeak, setCutPeak] = useState(false);
@@ -229,7 +233,7 @@ export function PingChart({
     return {
       width: w,
       height: h,
-      padding: [10, 14, 12, 2],
+      padding: [10, 18, 8, 2],
       cursor: { drag: { x: true, y: false } },
       legend: { show: false },
       scales: {
@@ -240,16 +244,22 @@ export function PingChart({
         {
           stroke: text,
           grid: { stroke: grid, width: 1 },
-          ticks: { stroke: grid },
-          size: 36,
-          values: formatHourMinuteAxis,
+          ticks: { stroke: grid, size: 4 },
+          gap: 5,
+          size: 34,
+          space: 70,
+          values: createTimeAxisValues(),
         },
         {
           stroke: text,
           grid: { stroke: grid, width: 1 },
-          ticks: { stroke: grid },
-          size: 54,
-          values: (_self, splits) => splits.map((value) => (value === 0 ? "" : `${Math.round(value)} ms`)),
+          ticks: { stroke: grid, size: 4 },
+          gap: 5,
+          size: createAxisSizer(40),
+          values: (_self, splits, _axisIdx, _foundSpace, foundIncr) => {
+            const decimals = decimalsForIncrement(foundIncr, 2);
+            return splits.map((value) => `${value.toFixed(decimals)} ms`);
+          },
         },
       ],
       series: [
@@ -309,13 +319,13 @@ export function PingChart({
               left: position.left,
               top: position.top,
               rows,
-              time: formatTooltipTime(timestamp, hours),
+              time: formatCursorTime(u, timestamp),
             });
           },
         ],
       },
     };
-  }, [chart, connectNulls, h, hiddenTasks, hours, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, xRange, yRange]);
+  }, [chart, connectNulls, h, hiddenTasks, isDark, taskColors, taskIndexById, taskLabels, tasks, visibleTasks, w, xRange, yRange]);
 
   const taskStats = useMemo(() => {
     const grouped = new Map<number, PingRecord[]>();
@@ -376,8 +386,23 @@ export function PingChart({
     setHiddenTasks((prev) => (prev.size === 0 ? new Set(tasks.map((task) => task.id)) : new Set()));
   };
 
+  const coverageSummary = useMemo(() => {
+    if (xRange) return formatChartCoverageRange(xRange[0], xRange[1]);
+    let start = Number.POSITIVE_INFINITY;
+    let end = Number.NEGATIVE_INFINITY;
+    for (const record of data?.records ?? []) {
+      const time = toChartSeconds(record.time);
+      if (time <= 0) continue;
+      if (time < start) start = time;
+      if (time > end) end = time;
+    }
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return "—";
+    return formatChartCoverageRange(start, end);
+  }, [data, xRange]);
+  const rangeSummary = formatRangeSummary(hours);
+
   if (isLoading) {
-    return <section className="instance-panel h-[260px] animate-pulse" aria-busy />;
+    return <section className="instance-panel instance-chart-skeleton" aria-busy />;
   }
 
   if (!data?.records.length) {
@@ -389,47 +414,61 @@ export function PingChart({
   }
 
   return (
-    <InstancePanel title="Ping 图表">
+    <InstancePanel
+      title="Ping 图表"
+      aside={<span className="instance-chart-range-chip">{rangeSummary}</span>}
+    >
       <div className="instance-ping-toolbar">
-        <button
-          type="button"
-          className="instance-toggle-button instance-switch-button"
-          data-active={cutPeak ? "true" : "false"}
-          onClick={() => setCutPeak((value) => !value)}
-          aria-pressed={cutPeak}
-          title="对尖峰值做轻度平滑，仅影响图线显示"
-        >
-          <span className="instance-switch-copy">削峰平滑</span>
-          <span className="instance-switch-track" aria-hidden>
-            <span className="instance-switch-thumb" />
+        <div className="instance-chart-meta" aria-label="图表数据范围">
+          <span>
+            覆盖 <strong>{coverageSummary}</strong>
           </span>
-          <span className="instance-switch-state">
-            {cutPeak ? "开启" : "关闭"}
+          <span>
+            采样 <strong>{`${data.records.length} 个点`}</strong>
           </span>
-        </button>
-        <button
-          type="button"
-          className="instance-toggle-button instance-switch-button"
-          data-active={connectNulls ? "true" : "false"}
-          onClick={() => setConnectNulls((value) => !value)}
-          aria-pressed={connectNulls}
-        >
-          <span className="instance-switch-copy">断点连线</span>
-          <span className="instance-switch-track" aria-hidden>
-            <span className="instance-switch-thumb" />
-          </span>
-          <span className="instance-switch-state">
-            {connectNulls ? "开启" : "关闭"}
-          </span>
-        </button>
-        <button type="button" className="instance-toggle-button" onClick={toggleAll}>
-          {hiddenTasks.size === 0 ? <EyeOff size={14} /> : <Eye size={14} />}
-          {hiddenTasks.size === 0 ? "隐藏全部" : "显示全部"}
-        </button>
-        <button type="button" className="instance-toggle-button" onClick={() => void refetch()}>
-          <RefreshCw size={14} />
-          刷新
-        </button>
+          <span className="instance-chart-hint">框选缩放 · 双击还原</span>
+        </div>
+        <div className="instance-ping-toolbar-actions">
+          <button
+            type="button"
+            className="instance-toggle-button instance-switch-button"
+            data-active={cutPeak ? "true" : "false"}
+            onClick={() => setCutPeak((value) => !value)}
+            aria-pressed={cutPeak}
+            title="对尖峰值做轻度平滑，仅影响图线显示"
+          >
+            <span className="instance-switch-copy">削峰平滑</span>
+            <span className="instance-switch-track" aria-hidden>
+              <span className="instance-switch-thumb" />
+            </span>
+            <span className="instance-switch-state">
+              {cutPeak ? "开启" : "关闭"}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="instance-toggle-button instance-switch-button"
+            data-active={connectNulls ? "true" : "false"}
+            onClick={() => setConnectNulls((value) => !value)}
+            aria-pressed={connectNulls}
+          >
+            <span className="instance-switch-copy">断点连线</span>
+            <span className="instance-switch-track" aria-hidden>
+              <span className="instance-switch-thumb" />
+            </span>
+            <span className="instance-switch-state">
+              {connectNulls ? "开启" : "关闭"}
+            </span>
+          </button>
+          <button type="button" className="instance-toggle-button" onClick={toggleAll}>
+            {hiddenTasks.size === 0 ? <EyeOff size={14} /> : <Eye size={14} />}
+            {hiddenTasks.size === 0 ? "隐藏全部" : "显示全部"}
+          </button>
+          <button type="button" className="instance-toggle-button" onClick={() => void refetch()}>
+            <RefreshCw size={14} />
+            刷新
+          </button>
+        </div>
       </div>
 
       <div className="instance-ping-tasks">
@@ -472,7 +511,7 @@ export function PingChart({
         })}
       </div>
 
-      <div className="instance-uplot-wrap is-large">
+      <div className="instance-uplot-wrap is-large" ref={wrapRef}>
         {chart && options ? (
           <>
             <UplotReact options={options} data={chart} />

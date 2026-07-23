@@ -137,6 +137,38 @@ export function formatExpireDays(iso: string | null | undefined): { value: strin
   return { value: "已过期", unit: "", tone };
 }
 
+function parseBillingCycleDays(cycle: string | number | null | undefined): number | null {
+  if (cycle == null || cycle === "") return null;
+  const days = typeof cycle === "number" ? cycle : Number.parseInt(cycle, 10);
+  return Number.isFinite(days) ? days : null;
+}
+
+/** Komari 的 billing_cycle 是天数，30/90/180/360/365 与负值有固定语义。 */
+export function formatBillingCycle(cycle: string | number | null | undefined): string {
+  const days = parseBillingCycleDays(cycle);
+  if (days == null || days === 0) return "";
+  if (days < 0) return "一次性";
+  if (days === 30) return "月";
+  if (days === 90) return "季";
+  if (days === 180) return "半年";
+  if (days === 360 || days === 365) return "年";
+  return `${days} 天`;
+}
+
+export function formatPriceLabel(
+  price: number | undefined | null,
+  cycle: string | number | null | undefined,
+  currency: string | undefined | null,
+): string {
+  const days = parseBillingCycleDays(cycle);
+  if (!price || !Number.isFinite(price) || price <= 0) {
+    return days == null || days === 0 ? "" : "免费";
+  }
+  const symbol = currency?.trim() || "$";
+  const amount = Number.isInteger(price) ? price.toString() : price.toFixed(2);
+  return `${symbol}${amount}`;
+}
+
 /** Parse `tag1<color>;tag2<color2>` into [{ label, color }]. */
 export function parseTags(raw: string | undefined | null): Array<{ label: string; color: string }> {
   if (!raw) return [];
