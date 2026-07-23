@@ -157,10 +157,14 @@ export function insertMetricGapSentinels(
     if (validTimes.length < 2) continue;
 
     const configuredInterval = intervals.get(key);
+    // Server-side downsampling can space points far wider than the task's
+    // configured interval; trust whichever cadence is coarser so aggregated
+    // series are not flooded with gap sentinels between every real point.
+    const detectedInterval = detectTypicalIntervalMs(validTimes, defaultInterval);
     const interval =
       typeof configuredInterval === "number" && configuredInterval > 0
-        ? configuredInterval
-        : detectTypicalIntervalMs(validTimes, defaultInterval);
+        ? Math.max(configuredInterval, detectedInterval)
+        : detectedInterval;
     if (!Number.isFinite(interval) || interval <= 0) continue;
 
     const tolerance = Math.max(1, interval * toleranceRatio);
