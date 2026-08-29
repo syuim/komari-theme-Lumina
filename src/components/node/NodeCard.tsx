@@ -254,7 +254,6 @@ export const NodeCard = memo(function NodeCard({
               rate={upRate}
               total={formatBytes(node.trafficUp)}
               samples={trafficTrend.up}
-              live={isOnline}
               redrawKey={resolvedAppearance}
               color="var(--progress-cpu)"
               icon={<ArrowUp size={15} strokeWidth={2.4} />}
@@ -265,7 +264,6 @@ export const NodeCard = memo(function NodeCard({
               rate={downRate}
               total={formatBytes(node.trafficDown)}
               samples={trafficTrend.down}
-              live={isOnline}
               redrawKey={resolvedAppearance}
               color="var(--status-success)"
               icon={<ArrowDown size={15} strokeWidth={2.4} />}
@@ -415,7 +413,6 @@ function TrafficStat({
   rate,
   total,
   samples,
-  live,
   redrawKey,
   color,
   icon,
@@ -425,7 +422,6 @@ function TrafficStat({
   rate: TrafficRateDisplay;
   total: string;
   samples: TrafficTrendSample[];
-  live: boolean;
   redrawKey: string;
   color: string;
   icon: ReactNode;
@@ -444,15 +440,6 @@ function TrafficStat({
       </div>
       <div className="traffic-stat-trend" aria-hidden>
         <TrafficDotStrip samples={samples} color={color} redrawKey={redrawKey} />
-        <span className="traffic-stat-live" data-live={live ? "true" : "false"}>
-          <span
-            className="traffic-stat-live-dot"
-            style={{
-              background: color,
-            }}
-          />
-          <span>{live ? (rate.bitsPerSec > 0 ? "实时" : "空闲") : "离线"}</span>
-        </span>
       </div>
       <div className="traffic-stat-foot">
         <div className="traffic-stat-total-label">

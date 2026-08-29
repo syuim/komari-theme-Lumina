@@ -1405,12 +1405,20 @@
 
 .traffic-stat {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
-.traffic-stat-head,
+.traffic-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
 .traffic-stat-foot,
 .server-health-head,
 .server-card-meta {
@@ -1435,16 +1443,15 @@
 
 .traffic-stat-value {
   flex: 0 0 auto;
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 640;
   letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .traffic-stat-trend {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 30px;
 }
 
 .traffic-dot-strip {
@@ -1525,6 +1532,11 @@
 .traffic-stat-foot {
   color: var(--text-secondary);
   font-size: 12px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .traffic-stat-total-label {
