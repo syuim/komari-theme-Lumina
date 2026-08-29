@@ -1,11 +1,10 @@
-import { memo, useCallback, useState, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   Cpu,
   Gauge,
   MemoryStick,
   HardDrive,
-  Globe,
   ArrowDown,
   ArrowUp,
   Clock3,
@@ -15,7 +14,7 @@ import {
   ExternalLink,
   Power,
 } from "lucide-react";
-import { useNode, useNodeTrafficTrend } from "@/hooks/useNode";
+import { useNode } from "@/hooks/useNode";
 import { usePingMini, usePingMiniBuckets } from "@/hooks/usePingMini";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import {
@@ -35,9 +34,8 @@ import { Flag } from "@/components/ui/Flag";
 import { MetricBar } from "./MetricBar";
 import { MiniBars } from "./MiniBars";
 import { QualityBars } from "./QualityBars";
-import { CanvasStrip, resolveCssColor } from "./CanvasStrip";
 import { clsx } from "clsx";
-import type { PingOverviewBucket, TrafficTrendSample } from "@/types/komari";
+import type { PingOverviewBucket } from "@/types/komari";
 import type { TrafficRateDisplay } from "@/utils/format";
 
 function buildSubtitle(parts: Array<string | null | undefined>) {
@@ -85,7 +83,6 @@ export const NodeCard = memo(function NodeCard({
 }) {
   const resolvedAppearance = useResolvedAppearance();
   const node = useNode(uuid);
-  const trafficTrend = useNodeTrafficTrend(uuid);
   const ping = usePingMini(uuid);
   const pingBuckets = usePingMiniBuckets(ping);
   const [hoveredLatencyIndex, setHoveredLatencyIndex] = useState<number | null>(null);
@@ -252,8 +249,6 @@ export const NodeCard = memo(function NodeCard({
               totalLabel="出站"
               rate={upRate}
               total={formatBytes(node.trafficUp)}
-              samples={trafficTrend.up}
-              redrawKey={resolvedAppearance}
               color="var(--progress-cpu)"
               icon={<ArrowUp size={15} strokeWidth={2.4} />}
             />
@@ -261,8 +256,6 @@ export const NodeCard = memo(function NodeCard({
               totalLabel="入站"
               rate={downRate}
               total={formatBytes(node.trafficDown)}
-              samples={trafficTrend.down}
-              redrawKey={resolvedAppearance}
               color="var(--status-success)"
               icon={<ArrowDown size={15} strokeWidth={2.4} />}
             />
@@ -409,16 +402,12 @@ function TrafficStat({
   totalLabel,
   rate,
   total,
-  samples,
-  redrawKey,
   color,
   icon,
 }: {
   totalLabel: "入站" | "出站";
   rate: TrafficRateDisplay;
   total: string;
-  samples: TrafficTrendSample[];
-  redrawKey: string;
   color: string;
   icon: ReactNode;
 }) {
@@ -433,103 +422,11 @@ function TrafficStat({
           <span className="traffic-stat-unit">{rate.unit}</span>
         </span>
       </div>
-      <div className="traffic-stat-trend" aria-hidden>
-        <TrafficDotStrip samples={samples} color={color} redrawKey={redrawKey} />
-      </div>
       <div className="traffic-stat-foot">
-        <div className="traffic-stat-total-label">
-          <GlobeArrow direction={totalLabel} color={color} />
-          <span>{totalLabel}</span>
-        </div>
+        <span>{totalLabel}</span>
         <span className="tabular">{total}</span>
       </div>
     </div>
-  );
-}
-
-function TrafficDotStrip({
-  samples,
-  color,
-  redrawKey,
-}: {
-  samples: TrafficTrendSample[];
-  color: string;
-  redrawKey: string;
-}) {
-  // useCallback 固定 draw 身份，避免卡片上无关状态（如 ping hover）变化时重绘画布。
-  const draw = useCallback(
-    (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      if (samples.length === 0) return;
-      const slotWidth = width / samples.length;
-      const baseColor = resolveCssColor(color);
-      const inactiveColor = resolveCssColor("var(--progress-bg)");
-
-      samples.forEach((sample, index) => {
-        const hasTraffic = sample.value > 0;
-        const scale = hasTraffic ? 0.72 + sample.level * 0.82 : 0.46;
-        const radius = 2 * scale;
-        const tone = hasTraffic
-          ? `color-mix(in srgb, ${baseColor} ${Math.round(68 + sample.level * 20)}%, white ${Math.round(32 - sample.level * 20)}%)`
-          : inactiveColor;
-        const x = index * slotWidth + slotWidth / 2;
-        const y = height / 2;
-
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = tone;
-        ctx.globalAlpha = hasTraffic ? Math.min(1, sample.opacity + 0.05) : 0.46;
-        ctx.fill();
-      });
-
-      ctx.globalAlpha = 1;
-    },
-    [color, samples],
-  );
-
-  return (
-    <CanvasStrip
-      className="traffic-dot-strip"
-      height={10}
-      ariaHidden
-      redrawKey={redrawKey}
-      draw={draw}
-    />
-  );
-}
-
-function GlobeArrow({
-  direction,
-  color,
-}: {
-  direction: "入站" | "出站";
-  color: string;
-}) {
-  const isInbound = direction === "入站";
-  return (
-    <span
-      className="relative inline-flex items-center justify-center"
-      style={{
-        width: 18,
-        height: 18,
-        color,
-      }}
-      aria-hidden
-    >
-      <Globe size={15} strokeWidth={1.9} />
-      {isInbound ? (
-        <ArrowDown
-          size={9}
-          strokeWidth={2.4}
-          className="absolute -right-[2px] bottom-[-1px]"
-        />
-      ) : (
-        <ArrowUp
-          size={9}
-          strokeWidth={2.4}
-          className="absolute -right-[2px] bottom-[-1px]"
-        />
-      )}
-    </span>
   );
 }
 
