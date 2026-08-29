@@ -249,7 +249,6 @@ export const NodeCard = memo(function NodeCard({
 
           <div className="card-metric-section server-traffic-section">
             <TrafficStat
-              direction="上行"
               totalLabel="出站"
               rate={upRate}
               total={formatBytes(node.trafficUp)}
@@ -259,7 +258,6 @@ export const NodeCard = memo(function NodeCard({
               icon={<ArrowUp size={15} strokeWidth={2.4} />}
             />
             <TrafficStat
-              direction="下行"
               totalLabel="入站"
               rate={downRate}
               total={formatBytes(node.trafficDown)}
@@ -408,7 +406,6 @@ export const NodeCard = memo(function NodeCard({
 });
 
 function TrafficStat({
-  direction,
   totalLabel,
   rate,
   total,
@@ -417,7 +414,6 @@ function TrafficStat({
   color,
   icon,
 }: {
-  direction: "下行" | "上行";
   totalLabel: "入站" | "出站";
   rate: TrafficRateDisplay;
   total: string;
@@ -431,7 +427,6 @@ function TrafficStat({
       <div className="traffic-stat-head">
         <div className="traffic-stat-label" style={{ color }}>
           {icon}
-          <span>{direction}</span>
         </div>
         <span className="traffic-stat-value tabular" style={{ color }}>
           {rate.value}

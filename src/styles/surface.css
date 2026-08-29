@@ -1474,33 +1474,6 @@
     box-shadow 0.3s ease;
 }
 
-.traffic-stat-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  color: var(--text-tertiary);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.traffic-stat-live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-}
-
-.traffic-stat-live[data-live="false"] {
-  color: var(--status-offline);
-}
-
-.traffic-stat-live[data-live="false"] .traffic-stat-live-dot {
-  animation: none;
-  opacity: 0.6;
-}
-
 .traffic-stat-unit,
 .server-health-unit,
 .server-card-meta-unit {
