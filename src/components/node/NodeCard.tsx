@@ -171,6 +171,7 @@ export const NodeCard = memo(function NodeCard({
                 title={node.online == null ? "状态同步中" : isOnline ? "在线" : "离线"}
               />
             </div>
+          </div>
         </header>
 
         <div className="server-card-stack">
