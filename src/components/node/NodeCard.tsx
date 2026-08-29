@@ -11,7 +11,6 @@ import {
   Unplug,
   Calendar,
   RefreshCw,
-  ExternalLink,
   Power,
 } from "lucide-react";
 import { useNode } from "@/hooks/useNode";
@@ -36,14 +35,6 @@ import { MiniBars } from "./MiniBars";
 import { QualityBars } from "./QualityBars";
 import { clsx } from "clsx";
 import type { PingOverviewBucket } from "@/types/komari";
-import type { TrafficRateDisplay } from "@/utils/format";
-
-function buildSubtitle(parts: Array<string | null | undefined>) {
-  return parts
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
-    .join(" · ");
-}
 
 function formatBucketWindow(bucket: PingOverviewBucket | null) {
   if (!bucket || bucket.startAt == null || bucket.endAt == null) {
@@ -113,9 +104,6 @@ export const NodeCard = memo(function NodeCard({
         : [];
   const expire = formatExpireDays(node.expired_at);
   const uptime = formatUptimeDays(node.uptime);
-  const subtitle =
-    buildSubtitle([node.group, node.public_remark]) ||
-    buildSubtitle([node.os, node.arch, node.virtualization]);
   const latencyColor = latencyHeatColor(ping.lastValue);
   const lossColor = lossHeatColor(ping.loss);
   const latencyHoverColor = hoveredLatencyBucket?.value != null
@@ -183,19 +171,6 @@ export const NodeCard = memo(function NodeCard({
                 title={node.online == null ? "状态同步中" : isOnline ? "在线" : "离线"}
               />
             </div>
-            {subtitle && (
-              <p className="server-card-subtitle" title={subtitle}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-          <Link
-            to={`/instance/${node.uuid}`}
-            className="server-card-detail-link"
-            title="查看详情"
-          >
-            <ExternalLink size={15} strokeWidth={2} />
-          </Link>
         </header>
 
         <div className="server-card-stack">
@@ -245,20 +220,28 @@ export const NodeCard = memo(function NodeCard({
           </div>
 
           <div className="card-metric-section server-traffic-section">
-            <TrafficStat
-              totalLabel="出站"
-              rate={upRate}
-              total={formatBytes(node.trafficUp)}
-              color="var(--progress-cpu)"
-              icon={<ArrowUp size={15} strokeWidth={2.4} />}
-            />
-            <TrafficStat
-              totalLabel="入站"
-              rate={downRate}
-              total={formatBytes(node.trafficDown)}
-              color="var(--status-success)"
-              icon={<ArrowDown size={15} strokeWidth={2.4} />}
-            />
+            <div className="traffic-row">
+              <div className="traffic-row-left">
+                <span className="traffic-row-item" style={{ color: "var(--progress-cpu)" }}>
+                  <ArrowUp size={15} strokeWidth={2.4} />
+                  <span className="traffic-stat-value tabular">{upRate.value}<span className="traffic-stat-unit">{upRate.unit}</span></span>
+                </span>
+                <span className="traffic-row-item" style={{ color: "var(--status-success)" }}>
+                  <ArrowDown size={15} strokeWidth={2.4} />
+                  <span className="traffic-stat-value tabular">{downRate.value}<span className="traffic-stat-unit">{downRate.unit}</span></span>
+                </span>
+              </div>
+              <div className="traffic-row-right">
+                <span className="traffic-row-foot">
+                  <span>出站</span>
+                  <span className="tabular">{formatBytes(node.trafficUp)}</span>
+                </span>
+                <span className="traffic-row-foot">
+                  <span>入站</span>
+                  <span className="tabular">{formatBytes(node.trafficDown)}</span>
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="card-metric-section card-metric-divided server-health-grid">
@@ -397,38 +380,6 @@ export const NodeCard = memo(function NodeCard({
     </article>
   );
 });
-
-function TrafficStat({
-  totalLabel,
-  rate,
-  total,
-  color,
-  icon,
-}: {
-  totalLabel: "入站" | "出站";
-  rate: TrafficRateDisplay;
-  total: string;
-  color: string;
-  icon: ReactNode;
-}) {
-  return (
-    <div className="traffic-stat">
-      <div className="traffic-stat-head">
-        <div className="traffic-stat-label" style={{ color }}>
-          {icon}
-        </div>
-        <span className="traffic-stat-value tabular" style={{ color }}>
-          {rate.value}
-          <span className="traffic-stat-unit">{rate.unit}</span>
-        </span>
-      </div>
-      <div className="traffic-stat-foot">
-        <span>{totalLabel}</span>
-        <span className="tabular">{total}</span>
-      </div>
-    </div>
-  );
-}
 
 function FooterStat({
   icon,
