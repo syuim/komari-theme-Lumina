@@ -74,6 +74,22 @@ export function formatTrafficRateLabel(bytesPerSec: number | undefined | null): 
   return `${rate.value} ${rate.unit}`;
 }
 
+const SHORT_RATE_UNITS: Record<TrafficRateUnit, string> = {
+  bps: "b",
+  Kbps: "K",
+  Mbps: "M",
+  Gbps: "G",
+  Tbps: "T",
+};
+
+export function shortRateUnit(unit: TrafficRateUnit): string {
+  return SHORT_RATE_UNITS[unit];
+}
+
+export function formatBytesShort(n: number | undefined | null): string {
+  return formatBytes(n).replace(/([KMGTP])B$/, "$1").replace(/ B$/, "");
+}
+
 export function formatUptimeDays(seconds: number): { value: string; unit: string } {
   if (!seconds || seconds <= 0) return { value: "—", unit: "" };
   const days = seconds / 86400;

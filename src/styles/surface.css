@@ -1346,22 +1346,29 @@
 
 .traffic-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 6px 16px;
   min-width: 0;
 }
 
 .traffic-row-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  gap: 6px 16px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .traffic-row-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  justify-content: flex-end;
+  gap: 6px 14px;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -1369,7 +1376,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .traffic-row-foot {
@@ -1407,6 +1416,7 @@
   font-weight: 640;
   letter-spacing: -0.03em;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .traffic-stat-unit,

@@ -18,11 +18,13 @@ import { usePingMini, usePingMiniBuckets } from "@/hooks/usePingMini";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import {
   formatBytes,
+  formatBytesShort,
   formatExpireDays,
   formatOfflineDuration,
   formatTrafficRate,
   formatUptimeDays,
   parseTags,
+  shortRateUnit,
 } from "@/utils/format";
 import { getExpireTextColor } from "@/utils/expireStatus";
 import {
@@ -225,21 +227,21 @@ export const NodeCard = memo(function NodeCard({
               <div className="traffic-row-left">
                 <span className="traffic-row-item" style={{ color: "var(--progress-cpu)" }}>
                   <ArrowUp size={15} strokeWidth={2.4} />
-                  <span className="traffic-stat-value tabular">{upRate.value}<span className="traffic-stat-unit">{upRate.unit}</span></span>
+                  <span className="traffic-stat-value tabular">{upRate.value}<span className="traffic-stat-unit">{shortRateUnit(upRate.unit)}</span></span>
                 </span>
                 <span className="traffic-row-item" style={{ color: "var(--status-success)" }}>
                   <ArrowDown size={15} strokeWidth={2.4} />
-                  <span className="traffic-stat-value tabular">{downRate.value}<span className="traffic-stat-unit">{downRate.unit}</span></span>
+                  <span className="traffic-stat-value tabular">{downRate.value}<span className="traffic-stat-unit">{shortRateUnit(downRate.unit)}</span></span>
                 </span>
               </div>
               <div className="traffic-row-right">
                 <span className="traffic-row-foot">
                   <span>出站</span>
-                  <span className="tabular">{formatBytes(node.trafficUp)}</span>
+                  <span className="tabular">{formatBytesShort(node.trafficUp)}</span>
                 </span>
                 <span className="traffic-row-foot">
                   <span>入站</span>
-                  <span className="tabular">{formatBytes(node.trafficDown)}</span>
+                  <span className="tabular">{formatBytesShort(node.trafficDown)}</span>
                 </span>
               </div>
             </div>
