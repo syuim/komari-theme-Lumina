@@ -17,7 +17,6 @@ import { useNode } from "@/hooks/useNode";
 import { usePingMini, usePingMiniBuckets } from "@/hooks/usePingMini";
 import { useResolvedAppearance } from "@/hooks/usePreferences";
 import {
-  formatBytes,
   formatBytesShort,
   formatExpireDays,
   formatOfflineDuration,
@@ -183,7 +182,6 @@ export const NodeCard = memo(function NodeCard({
               label="CPU"
               valueText={node.cpuPct.toFixed(2)}
               unit="%"
-              detailText={`${node.cpu_cores || 0} 核`}
               fraction={node.cpuPct / 100}
               redrawKey={resolvedAppearance}
               paint={{ kind: "solid", color: "var(--progress-cpu)" }}
@@ -193,7 +191,6 @@ export const NodeCard = memo(function NodeCard({
               label="内存"
               valueText={node.ramPct.toFixed(2)}
               unit="%"
-              detailText={`${formatBytes(node.ramUsed)} / ${formatBytes(node.ramTotal)}`}
               fraction={node.ramPct / 100}
               redrawKey={resolvedAppearance}
               paint={{ kind: "solid", color: "var(--progress-memory)" }}
@@ -203,7 +200,6 @@ export const NodeCard = memo(function NodeCard({
               label="磁盘"
               valueText={node.diskPct.toFixed(1)}
               unit="%"
-              detailText={`${formatBytes(node.diskUsed)} / ${formatBytes(node.diskTotal)}`}
               fraction={node.diskPct / 100}
               redrawKey={resolvedAppearance}
               paint={{ kind: "solid", color: "var(--progress-disk)" }}
