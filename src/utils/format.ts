@@ -62,9 +62,10 @@ export function formatTrafficRate(bytesPerSec: number | undefined | null): Traff
     }
   }
 
+  // Convert sub-1000 bits/sec to Kbps so all rates show k/M/G consistently
   return {
-    value: bitsPerSec >= 100 ? Math.round(bitsPerSec).toString() : trimFixed(bitsPerSec, 1),
-    unit: "bps",
+    value: formatRateValue(bitsPerSec / 1000),
+    unit: "Kbps",
     bitsPerSec,
   };
 }
