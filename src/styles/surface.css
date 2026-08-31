@@ -1608,6 +1608,214 @@
   letter-spacing: 0.01em;
 }
 
+/* ========== List view ========== */
+
+.node-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.node-list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--hairline);
+  transition: background 120ms ease;
+}
+.node-list-row:first-child {
+  border-top: 1px solid var(--hairline);
+}
+.node-list-row:hover {
+  background: color-mix(in srgb, var(--hover-bg) 44%, transparent);
+}
+.node-list-row.is-offline {
+  opacity: 0.55;
+}
+.node-list-row.is-skeleton {
+  min-height: 52px;
+  animation: instance-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.node-list-left {
+  display: flex;
+  flex: 1 1 200px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.node-list-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 630;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+.node-list-name:hover {
+  color: var(--progress-cpu);
+}
+
+.node-list-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+.node-list-dot.is-offline {
+  width: 9px;
+  height: 9px;
+  border: 1px solid color-mix(in srgb, var(--status-offline) 72%, black 28%);
+  background: color-mix(in srgb, var(--status-offline) 88%, black 12%) !important;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--status-offline) 26%, transparent),
+    0 0 18px -4px color-mix(in srgb, var(--status-offline) 86%, black 14%) !important;
+}
+
+.node-list-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.node-list-tag {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--tag-bg);
+  color: var(--tag-fg);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.node-list-metrics {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.node-list-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.node-list-metric-track {
+  display: inline-block;
+  width: 40px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--progress-bg);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.node-list-metric-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.node-list-metric-val {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.node-list-right {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  flex: 0 1 auto;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.node-list-traffic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.node-list-rate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 630;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.node-list-rate-unit {
+  margin-left: 1px;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.node-list-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.node-list-total-sep {
+  color: var(--hairline);
+  font-size: 10px;
+}
+
+.node-list-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.node-list-expire,
+.node-list-uptime {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.node-list-status-label {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.node-list-uptime {
+  color: var(--progress-cpu);
+}
+
 @media (max-width: 720px) {
   .instance-panel {
     padding: 16px;
@@ -1742,5 +1950,23 @@
   .server-card-meta-grid {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+
+  .node-list-row {
+    padding: 10px 12px;
+    gap: 8px 12px;
+  }
+
+  .node-list-left {
+    flex: 1 1 100%;
+  }
+
+  .node-list-right {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .node-list-metric-track {
+    width: 28px;
   }
 }
