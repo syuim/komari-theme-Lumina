@@ -1708,7 +1708,7 @@
 
 .node-list-metric-track {
   display: inline-block;
-  width: 40px;
+  width: 56px;
   height: 5px;
   border-radius: 999px;
   background: var(--progress-bg);
@@ -1767,7 +1767,7 @@
 
 .node-list-traffic-track {
   display: inline-block;
-  width: 40px;
+  width: 56px;
   height: 5px;
   border-radius: 999px;
   background: var(--progress-bg);
@@ -1962,7 +1962,7 @@
   }
 
   .node-list-metric-track {
-    width: 24px;
+    width: 40px;
   }
 
   .node-list-traffic-block {
