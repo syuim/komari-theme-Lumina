@@ -6,7 +6,6 @@ import {
   formatBytesShort,
   formatTrafficRate,
   formatUptimeDays,
-  parseTags,
   shortRateUnit,
 } from "@/utils/format";
 import { Flag } from "@/components/ui/Flag";
@@ -25,7 +24,6 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
     return <div className="node-list-row is-skeleton" />;
   }
 
-  const tags = parseTags(node.tags);
   const uptime = formatUptimeDays(node.uptime);
   const upRate = formatTrafficRate(node.netUp);
   const downRate = formatTrafficRate(node.netDown);
@@ -63,22 +61,6 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
           }}
           title={node.online == null ? "状态同步中" : isOnline ? "在线" : "离线"}
         />
-        {tags.length > 0 && (
-          <span className="node-list-tags">
-            {tags.slice(0, 2).map((tag, i) => (
-              <span key={i} className="node-list-tag">
-                {tag.label}
-              </span>
-            ))}
-          </span>
-        )}
-        <span className="node-list-spec">
-          {node.cpu_cores}核
-          <span className="node-list-spec-sep">·</span>
-          {formatBytesShort(node.mem_total)}
-          <span className="node-list-spec-sep">·</span>
-          {formatBytesShort(node.disk_total)}
-        </span>
       </div>
 
       <div className="node-list-metrics">
@@ -90,6 +72,7 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
               style={{ width: `${Math.min(node.cpuPct, 100)}%`, background: "var(--progress-cpu)" }}
             />
           </span>
+          <span className="node-list-metric-detail">{node.cpu_cores}核</span>
           <span className="node-list-metric-val">{node.cpuPct.toFixed(1)}%</span>
         </span>
         <span className="node-list-metric">
@@ -100,6 +83,7 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
               style={{ width: `${Math.min(node.ramPct, 100)}%`, background: "var(--progress-memory)" }}
             />
           </span>
+          <span className="node-list-metric-detail">{formatBytesShort(node.ramUsed)}/{formatBytesShort(node.ramTotal)}</span>
           <span className="node-list-metric-val">{node.ramPct.toFixed(1)}%</span>
         </span>
         <span className="node-list-metric">
@@ -110,6 +94,7 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
               style={{ width: `${Math.min(node.diskPct, 100)}%`, background: "var(--progress-disk)" }}
             />
           </span>
+          <span className="node-list-metric-detail">{formatBytesShort(node.diskUsed)}/{formatBytesShort(node.diskTotal)}</span>
           <span className="node-list-metric-val">{node.diskPct.toFixed(1)}%</span>
         </span>
       </div>
