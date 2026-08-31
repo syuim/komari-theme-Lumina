@@ -76,8 +76,8 @@ export function formatTrafficRateLabel(bytesPerSec: number | undefined | null): 
 }
 
 const SHORT_RATE_UNITS: Record<TrafficRateUnit, string> = {
-  bps: "k",
-  Kbps: "k",
+  bps: "K",
+  Kbps: "K",
   Mbps: "M",
   Gbps: "G",
   Tbps: "T",

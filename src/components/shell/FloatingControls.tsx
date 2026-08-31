@@ -65,25 +65,25 @@ export function FloatingControls() {
               aria-label="视图切换"
             >
               <Link
-                to="/"
+                to="/?view=grid"
                 aria-label="卡片视图"
                 title="卡片视图"
                 tabIndex={hiddenTabIndex}
                 className={clsx(
                   "control-button control-toggle grid h-9 w-9 place-items-center",
-                  searchParams.get("view") !== "list" && "is-active",
+                  searchParams.get("view") === "grid" && "is-active",
                 )}
               >
                 <LayoutGrid size={16} />
               </Link>
               <Link
-                to="/?view=list"
+                to="/"
                 aria-label="列表视图"
                 title="列表视图"
                 tabIndex={hiddenTabIndex}
                 className={clsx(
                   "control-button control-toggle grid h-9 w-9 place-items-center",
-                  searchParams.get("view") === "list" && "is-active",
+                  searchParams.get("view") !== "grid" && "is-active",
                 )}
               >
                 <List size={16} />

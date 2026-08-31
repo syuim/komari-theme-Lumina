@@ -12,7 +12,7 @@ const ThemeManage = lazy(() =>
 
 export function Home() {
   const [searchParams] = useSearchParams();
-  const viewMode = searchParams.get("view") === "list" ? "list" : "grid";
+  const viewMode = searchParams.get("view") === "grid" ? "grid" : "list";
   const isMobile = useIsMobile();
   const {
     data: me,
@@ -80,7 +80,7 @@ export function Home() {
 
   return (
     <div className="py-2">
-      {viewMode === "list" && !isMobile ? <NodeList /> : <NodeGrid />}
+      {viewMode === "grid" || isMobile ? <NodeGrid /> : <NodeList />}
     </div>
   );
 }

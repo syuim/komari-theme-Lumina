@@ -17,6 +17,27 @@ export function NodeList() {
 
   return (
     <div className="node-list">
+      <div className="node-list-row node-list-header">
+        <div className="node-list-left">
+          <span className="node-list-header-label">节点</span>
+        </div>
+        <div className="node-list-metrics">
+          <span className="node-list-header-label node-list-header-metric" style={{ width: 155 }}>CPU</span>
+          <span className="node-list-header-label node-list-header-metric" style={{ width: 192 }}>内存</span>
+          <span className="node-list-header-label node-list-header-metric" style={{ width: 192 }}>磁盘</span>
+          <span className="node-list-header-label node-list-header-metric" style={{ width: 128 }}>负载</span>
+        </div>
+        <div className="node-list-traffic-block">
+          <span className="node-list-header-label node-list-header-rate">上行</span>
+          <span className="node-list-header-label node-list-header-rate">下行</span>
+          <span className="node-list-traffic-bar">
+            <span className="node-list-header-label node-list-header-usage">用量</span>
+          </span>
+        </div>
+        <div className="node-list-status">
+          <span className="node-list-header-label">在线</span>
+        </div>
+      </div>
       {uuids.map((uuid) => (
         <NodeListItem key={uuid} uuid={uuid} />
       ))}

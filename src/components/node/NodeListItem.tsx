@@ -125,12 +125,6 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
         </span>
         {node.traffic_limit > 0 && (
           <span className="node-list-traffic-bar">
-            <span className="node-list-traffic-track">
-              <span
-                className="node-list-traffic-fill"
-                style={{ width: `${trafficPct}%`, background: barColor }}
-              />
-            </span>
             <span className="node-list-traffic-detail">
               {formatBytesShort(trafficTotal)}/{formatBytesShort(node.traffic_limit)}
             </span>
