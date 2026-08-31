@@ -1736,8 +1736,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 auto;
-  margin-left: auto;
+  flex: 0 0 280px;
   min-width: 0;
 }
 
@@ -1763,7 +1762,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-width: 7em;
+  width: 8em;
 }
 
 .node-list-traffic-track {
@@ -1795,9 +1794,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 auto;
+  flex: 0 0 80px;
   white-space: nowrap;
-  min-width: 5em;
 }
 
 .node-list-online {
@@ -1952,12 +1950,12 @@
     flex: 1 1 100%;
   }
 
-  .node-list-traffic-block {
-    margin-left: 0;
-  }
-
   .node-list-metric-track {
     width: 24px;
+  }
+
+  .node-list-traffic-block {
+    flex: 0 0 auto;
   }
 
   .node-list-rate {
@@ -1966,7 +1964,11 @@
   }
 
   .node-list-traffic-bar {
-    min-width: 6em;
+    width: 6em;
+  }
+
+  .node-list-status {
+    flex: 0 0 auto;
   }
 
   .node-list-metric-val {
