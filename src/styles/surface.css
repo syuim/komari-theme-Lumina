@@ -1685,7 +1685,7 @@
   display: flex;
   align-items: center;
   gap: 6px 12px;
-  flex: 0 0 600px;
+  flex: 0 0 auto;
   min-width: 0;
 }
 
@@ -1699,7 +1699,16 @@
   white-space: nowrap;
 }
 
+/* 固定每列宽度：图标/进度条跨行严格对齐，数值变化不推动相邻元素 */
+.node-list-metric:nth-child(1) { width: 155px; }
+.node-list-metric:nth-child(2) { width: 192px; }
+.node-list-metric:nth-child(3) { width: 192px; }
+.node-list-metric:nth-child(4) { width: 128px; }
+
 .node-list-metric-detail {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
   color: var(--text-tertiary);
   font-size: 10px;
   font-weight: 500;
@@ -1725,11 +1734,13 @@
 }
 
 .node-list-metric-val {
+  flex: 0 0 auto;
+  min-width: 4.5em;
+  text-align: right;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
-  min-width: 4.5em;
 }
 
 .node-list-traffic-block {
@@ -1959,6 +1970,11 @@
 
   .node-list-metrics {
     flex: 0 0 auto;
+    flex-wrap: wrap;
+  }
+
+  .node-list-metric:nth-child(n) {
+    width: auto;
   }
 
   .node-list-metric-track {
