@@ -1643,7 +1643,7 @@
 
 .node-list-left {
   display: flex;
-  flex: 0 0 180px;
+  flex: 0 0 130px;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -1736,7 +1736,7 @@
 .node-list-metric-val {
   flex: 0 0 auto;
   min-width: 4.5em;
-  text-align: right;
+  text-align: left;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
