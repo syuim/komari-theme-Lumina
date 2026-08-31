@@ -4,6 +4,7 @@ import { NodeGrid } from "@/components/node/NodeGrid";
 import { NodeList } from "@/components/node/NodeList";
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const ThemeManage = lazy(() =>
   import("@/pages/ThemeManage").then((module) => ({ default: module.ThemeManage })),
@@ -12,6 +13,7 @@ const ThemeManage = lazy(() =>
 export function Home() {
   const [searchParams] = useSearchParams();
   const viewMode = searchParams.get("view") === "list" ? "list" : "grid";
+  const isMobile = useIsMobile();
   const {
     data: me,
     isPending: authPending,
@@ -78,7 +80,7 @@ export function Home() {
 
   return (
     <div className="py-2">
-      {viewMode === "grid" ? <NodeGrid /> : <NodeList />}
+      {viewMode === "list" && !isMobile ? <NodeList /> : <NodeGrid />}
     </div>
   );
 }

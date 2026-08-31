@@ -1958,47 +1958,4 @@
     grid-template-columns: 1fr;
     gap: 14px;
   }
-
-  .node-list-row {
-    padding: 8px 10px;
-    gap: 6px 10px;
-  }
-
-  .node-list-left {
-    flex: 1 1 100%;
-  }
-
-  .node-list-metrics {
-    flex: 0 0 auto;
-    flex-wrap: wrap;
-  }
-
-  .node-list-metric:nth-child(n) {
-    width: auto;
-  }
-
-  .node-list-metric-track {
-    width: 40px;
-  }
-
-  .node-list-traffic-block {
-    flex: 0 0 auto;
-  }
-
-  .node-list-rate {
-    min-width: 3em;
-    font-size: 12px;
-  }
-
-  .node-list-traffic-bar {
-    min-width: 5em;
-  }
-
-  .node-list-status {
-    flex: 0 0 auto;
-  }
-
-  .node-list-metric-val {
-    min-width: 3em;
-  }
 }
