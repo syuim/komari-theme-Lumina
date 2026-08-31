@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { Cpu, MemoryStick, HardDrive, ArrowDown, ArrowUp } from "lucide-react";
+import { Cpu, Gauge, MemoryStick, HardDrive, ArrowDown, ArrowUp } from "lucide-react";
 import { useNode } from "@/hooks/useNode";
 import {
   formatBytesShort,
@@ -97,6 +97,19 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
           <span className="node-list-metric-detail">{formatBytesShort(node.diskUsed)}/{formatBytesShort(node.diskTotal)}</span>
           <span className="node-list-metric-val">{node.diskPct.toFixed(1)}%</span>
         </span>
+        <span className="node-list-metric">
+          <Gauge size={11} strokeWidth={2} />
+          <span className="node-list-metric-track">
+            <span
+              className="node-list-metric-fill"
+              style={{
+                width: `${Math.min((node.load1 / (node.cpu_cores || 4)) * 100, 100)}%`,
+                background: "linear-gradient(90deg, var(--progress-cpu), var(--progress-memory))",
+              }}
+            />
+          </span>
+          <span className="node-list-metric-val">{node.load1.toFixed(2)}</span>
+        </span>
       </div>
 
       <div className="node-list-traffic-block">
@@ -119,7 +132,7 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
               />
             </span>
             <span className="node-list-traffic-detail">
-              已用 {formatBytesShort(trafficTotal)}/{formatBytesShort(node.traffic_limit)}
+              {formatBytesShort(trafficTotal)}/{formatBytesShort(node.traffic_limit)}
             </span>
             <span className="node-list-traffic-pct" style={{ color: barColor }}>
               {trafficPct.toFixed(1)}%
