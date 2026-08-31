@@ -1737,6 +1737,7 @@
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
+  margin-left: auto;
   min-width: 0;
 }
 
@@ -1748,7 +1749,7 @@
   font-weight: 630;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
-  min-width: 5em;
+  width: 6em;
 }
 
 .node-list-rate-unit {
@@ -1951,12 +1952,16 @@
     flex: 1 1 100%;
   }
 
+  .node-list-traffic-block {
+    margin-left: 0;
+  }
+
   .node-list-metric-track {
     width: 24px;
   }
 
   .node-list-rate {
-    min-width: 4em;
+    width: 4em;
     font-size: 12px;
   }
 
