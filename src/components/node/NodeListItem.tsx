@@ -118,6 +118,9 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
                 style={{ width: `${trafficPct}%`, background: barColor }}
               />
             </span>
+            <span className="node-list-traffic-detail">
+              已用 {formatBytesShort(trafficTotal)}/{formatBytesShort(node.traffic_limit)}
+            </span>
             <span className="node-list-traffic-pct" style={{ color: barColor }}>
               {trafficPct.toFixed(1)}%
             </span>

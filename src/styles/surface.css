@@ -1790,6 +1790,13 @@
   min-width: 3.6em;
 }
 
+.node-list-traffic-detail {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .node-list-status {
   display: inline-flex;
   align-items: center;
