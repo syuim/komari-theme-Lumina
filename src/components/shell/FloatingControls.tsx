@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Monitor, Settings, SlidersHorizontal, Sun, Moon } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, LayoutGrid, List, Monitor, Settings, SlidersHorizontal, Sun, Moon } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useNodeStoreStatus } from "@/hooks/useNode";
@@ -59,6 +59,36 @@ export function FloatingControls() {
       <div className="floating-controls-inner">
         <div className="floating-controls-row">
           <div className="floating-controls-actions" aria-hidden={collapsed}>
+            <div
+              className="control-group"
+              role="group"
+              aria-label="视图切换"
+            >
+              <Link
+                to="/"
+                aria-label="卡片视图"
+                title="卡片视图"
+                tabIndex={hiddenTabIndex}
+                className={clsx(
+                  "control-button control-toggle grid h-9 w-9 place-items-center",
+                  searchParams.get("view") !== "list" && "is-active",
+                )}
+              >
+                <LayoutGrid size={16} />
+              </Link>
+              <Link
+                to="/?view=list"
+                aria-label="列表视图"
+                title="列表视图"
+                tabIndex={hiddenTabIndex}
+                className={clsx(
+                  "control-button control-toggle grid h-9 w-9 place-items-center",
+                  searchParams.get("view") === "list" && "is-active",
+                )}
+              >
+                <List size={16} />
+              </Link>
+            </div>
             <div
               className="control-group"
               role="group"

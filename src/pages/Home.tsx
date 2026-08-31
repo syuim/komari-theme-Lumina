@@ -1,7 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
-import { LayoutGrid, List } from "lucide-react";
-import { clsx } from "clsx";
 import { NodeGrid } from "@/components/node/NodeGrid";
 import { NodeList } from "@/components/node/NodeList";
 import { Spinner } from "@/components/ui/Spinner";
@@ -13,7 +11,7 @@ const ThemeManage = lazy(() =>
 
 export function Home() {
   const [searchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const viewMode = searchParams.get("view") === "list" ? "list" : "grid";
   const {
     data: me,
     isPending: authPending,
@@ -80,26 +78,6 @@ export function Home() {
 
   return (
     <div className="py-2">
-      <div className="mb-3 flex items-center justify-end px-2">
-        <div className="control-group">
-          <button
-            type="button"
-            className={clsx("control-toggle", viewMode === "grid" && "is-active")}
-            onClick={() => setViewMode("grid")}
-            title="卡片视图"
-          >
-            <LayoutGrid size={15} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            className={clsx("control-toggle", viewMode === "list" && "is-active")}
-            onClick={() => setViewMode("list")}
-            title="列表视图"
-          >
-            <List size={15} strokeWidth={2} />
-          </button>
-        </div>
-      </div>
       {viewMode === "grid" ? <NodeGrid /> : <NodeList />}
     </div>
   );
