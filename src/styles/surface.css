@@ -1643,15 +1643,14 @@
 
 .node-list-left {
   display: flex;
-  flex: 0 0 200px;
+  flex: 0 1 auto;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  overflow: hidden;
 }
 
 .node-list-name {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1686,9 +1685,8 @@
   display: flex;
   align-items: center;
   gap: 6px 12px;
-  flex: 0 0 300px;
+  flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
 }
 
 .node-list-metric {
@@ -1738,9 +1736,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex: 0 0 280px;
+  flex: 0 1 auto;
+  margin-left: auto;
   min-width: 0;
-  overflow: hidden;
 }
 
 .node-list-rate {
@@ -1751,7 +1749,7 @@
   font-weight: 630;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
-  width: 6em;
+  min-width: 5em;
 }
 
 .node-list-rate-unit {
@@ -1765,7 +1763,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  width: 8em;
+  min-width: 7em;
 }
 
 .node-list-traffic-track {
@@ -1797,9 +1795,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 80px;
+  flex: 0 0 auto;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .node-list-online {
@@ -1959,20 +1956,16 @@
   }
 
   .node-list-traffic-block {
-    flex: 0 0 auto;
+    margin-left: 0;
   }
 
   .node-list-rate {
-    width: 4em;
+    min-width: 3em;
     font-size: 12px;
   }
 
   .node-list-traffic-bar {
-    width: 6em;
-  }
-
-  .node-list-status {
-    flex: 0 0 auto;
+    min-width: 5em;
   }
 
   .node-list-metric-val {
