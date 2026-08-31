@@ -4,15 +4,19 @@ import { Cpu, MemoryStick, HardDrive, ArrowDown, ArrowUp } from "lucide-react";
 import { useNode } from "@/hooks/useNode";
 import {
   formatBytesShort,
-  formatExpireDays,
   formatTrafficRate,
   formatUptimeDays,
   parseTags,
   shortRateUnit,
 } from "@/utils/format";
-import { getExpireTextColor } from "@/utils/expireStatus";
 import { Flag } from "@/components/ui/Flag";
 import { clsx } from "clsx";
+
+function trafficBarColor(pct: number): string {
+  if (pct > 90) return "var(--status-offline)";
+  if (pct > 75) return "#eab308";
+  return "var(--progress-cpu)";
+}
 
 export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string }) {
   const node = useNode(uuid);
@@ -22,17 +26,21 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
   }
 
   const tags = parseTags(node.tags);
-  const expire = formatExpireDays(node.expired_at);
   const uptime = formatUptimeDays(node.uptime);
   const upRate = formatTrafficRate(node.netUp);
   const downRate = formatTrafficRate(node.netDown);
   const isOnline = node.online === true;
   const isOffline = node.online === false;
 
+  const trafficTotal = node.trafficUp + node.trafficDown;
+  const trafficPct =
+    node.traffic_limit > 0 ? Math.min(100, (trafficTotal / node.traffic_limit) * 100) : 0;
+  const barColor = trafficBarColor(trafficPct);
+
   return (
     <div className={clsx("node-list-row", isOffline && "is-offline")}>
       <div className="node-list-left">
-        <Flag region={node.region} size={15} />
+        <Flag region={node.region} size={14} />
         <Link to={`/instance/${node.uuid}`} className="node-list-name" title={node.name}>
           {node.name}
         </Link>
@@ -57,13 +65,20 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
         />
         {tags.length > 0 && (
           <span className="node-list-tags">
-            {tags.slice(0, 3).map((tag, i) => (
+            {tags.slice(0, 2).map((tag, i) => (
               <span key={i} className="node-list-tag">
                 {tag.label}
               </span>
             ))}
           </span>
         )}
+        <span className="node-list-spec">
+          {node.cpu_cores}核
+          <span className="node-list-spec-sep">·</span>
+          {formatBytesShort(node.mem_total)}
+          <span className="node-list-spec-sep">·</span>
+          {formatBytesShort(node.disk_total)}
+        </span>
       </div>
 
       <div className="node-list-metrics">
@@ -99,33 +114,35 @@ export const NodeListItem = memo(function NodeListItem({ uuid }: { uuid: string 
         </span>
       </div>
 
-      <div className="node-list-right">
-        <span className="node-list-traffic">
-          <span className="node-list-rate" style={{ color: "var(--progress-cpu)" }}>
-            <ArrowUp size={12} strokeWidth={2.4} />
-            {upRate.value}
-            <span className="node-list-rate-unit">{shortRateUnit(upRate.unit)}</span>
-          </span>
-          <span className="node-list-rate" style={{ color: "var(--status-success)" }}>
-            <ArrowDown size={12} strokeWidth={2.4} />
-            {downRate.value}
-            <span className="node-list-rate-unit">{shortRateUnit(downRate.unit)}</span>
-          </span>
+      <div className="node-list-traffic-block">
+        <span className="node-list-rate" style={{ color: "var(--progress-cpu)" }}>
+          <ArrowUp size={12} strokeWidth={2.4} />
+          {upRate.value}
+          <span className="node-list-rate-unit">{shortRateUnit(upRate.unit)}</span>
         </span>
-        <span className="node-list-total">
-          出站 {formatBytesShort(node.trafficUp)}
-          <span className="node-list-total-sep">/</span>
-          入站 {formatBytesShort(node.trafficDown)}
+        <span className="node-list-rate" style={{ color: "var(--status-success)" }}>
+          <ArrowDown size={12} strokeWidth={2.4} />
+          {downRate.value}
+          <span className="node-list-rate-unit">{shortRateUnit(downRate.unit)}</span>
         </span>
-        <span className="node-list-status">
-          <span className="node-list-expire" style={{ color: getExpireTextColor(node.expired_at) }}>
-            <span className="node-list-status-label">到期</span>
-            {expire.value}
-            {expire.unit}
+        {node.traffic_limit > 0 && (
+          <span className="node-list-traffic-bar">
+            <span className="node-list-traffic-track">
+              <span
+                className="node-list-traffic-fill"
+                style={{ width: `${trafficPct}%`, background: barColor }}
+              />
+            </span>
+            <span className="node-list-traffic-pct" style={{ color: barColor }}>
+              {trafficPct.toFixed(1)}%
+            </span>
           </span>
-          <span className="node-list-uptime">
-            在线 {isOnline ? `${uptime.value} ${uptime.unit}` : "—"}
-          </span>
+        )}
+      </div>
+
+      <div className="node-list-status">
+        <span className="node-list-online" title={isOnline ? "在线" : "离线"}>
+          {isOnline ? `${uptime.value}${uptime.unit}` : "离线"}
         </span>
       </div>
     </div>
