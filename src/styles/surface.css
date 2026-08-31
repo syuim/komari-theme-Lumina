@@ -1643,14 +1643,14 @@
 
 .node-list-left {
   display: flex;
-  flex: 0 1 auto;
+  flex: 0 0 180px;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
 .node-list-name {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1685,7 +1685,7 @@
   display: flex;
   align-items: center;
   gap: 6px 12px;
-  flex: 0 1 auto;
+  flex: 0 0 480px;
   min-width: 0;
 }
 
@@ -1736,8 +1736,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex: 0 1 auto;
-  margin-left: auto;
+  flex: 0 0 280px;
   min-width: 0;
 }
 
@@ -1795,7 +1794,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 auto;
+  flex: 0 0 80px;
   white-space: nowrap;
 }
 
@@ -1951,12 +1950,16 @@
     flex: 1 1 100%;
   }
 
+  .node-list-metrics {
+    flex: 0 0 auto;
+  }
+
   .node-list-metric-track {
     width: 24px;
   }
 
   .node-list-traffic-block {
-    margin-left: 0;
+    flex: 0 0 auto;
   }
 
   .node-list-rate {
@@ -1966,6 +1969,10 @@
 
   .node-list-traffic-bar {
     min-width: 5em;
+  }
+
+  .node-list-status {
+    flex: 0 0 auto;
   }
 
   .node-list-metric-val {
